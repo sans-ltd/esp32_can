@@ -68,7 +68,7 @@ void MCP2517FD::resetHardware()
     int idx;
     if (debuggingMode)
     {
-        printf("Diag0: %x\n     Diag1: %x     ErrFlgs: %x", getCIBDIAG0(), cachedDiag1, getErrorFlags());
+        printf("Diag0: %lx\n     Diag1: %lx     ErrFlgs: %lx", getCIBDIAG0(), cachedDiag1, getErrorFlags());
     }
     cachedDiag1 = 0;
 
@@ -553,9 +553,9 @@ bool MCP2517FD::_init(uint32_t CAN_Bus_Speed, uint8_t Freq, uint8_t SJW, bool au
     if (debuggingMode)
     {
         debugVal = Read(ADDR_CiCON);
-        printf("CiCON: %x\n", debugVal);
+        printf("CiCON: %lx\n", debugVal);
         debugVal = Read(ADDR_CiNBTCFG);
-        printf("CiNBTCFG: %x\n", debugVal);
+        printf("CiNBTCFG: %lx\n", debugVal);
     }
 
     commonInit();
@@ -606,7 +606,7 @@ bool MCP2517FD::_init(uint32_t CAN_Bus_Speed, uint8_t Freq, uint8_t SJW, bool au
     {
         if (debuggingMode)
         {
-            printf("MCP2517 Init Failed. CiINT = %x", rtn);
+            printf("MCP2517 Init Failed. CiINT = %lx", rtn);
         }
         return false;
     }
@@ -1229,7 +1229,7 @@ void MCP2517FD::LoadFrameBuffer(uint16_t address, CAN_FRAME_FD &message)
     {
         Serial.write('_');
         uint32_t cnf = Read(ADDR_CiFIFOCON);
-        Serial.printf("FIFOCON: 0x%x\n", cnf);
+        Serial.printf("FIFOCON: 0x%lx\n", cnf);
     }
     
 }
