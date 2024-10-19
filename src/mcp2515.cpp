@@ -111,7 +111,7 @@ MCP2515::MCP2515(uint8_t CS_Pin, uint8_t INT_Pin) : CAN_COMMON(6) {
   digitalWrite(INT_Pin,HIGH);
 
   attachInterrupt(INT_Pin, MCP_INTHandler, FALLING);
-  
+
   _CS = CS_Pin;
   _INT = INT_Pin;
   
@@ -237,7 +237,7 @@ int MCP2515::Init(uint32_t CAN_Bus_Speed, uint8_t Freq, uint8_t SJW) {
 
 bool MCP2515::_init(uint32_t CAN_Bus_Speed, uint8_t Freq, uint8_t SJW, bool autoBaud) {
 
-  SPI.begin(SCK, MISO, MOSI, SS);       //Set up Serial Peripheral Interface Port for CAN2
+  // SPI.begin(SCK, MISO, MOSI, SS);       //Set up Serial Peripheral Interface Port for CAN2
   SPI.setClockDivider(SPI_CLOCK_DIV32);
   SPI.setDataMode(SPI_MODE0);
   SPI.setBitOrder(MSBFIRST);
