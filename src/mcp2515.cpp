@@ -99,8 +99,9 @@ void MCP2515::sendCallback(CAN_FRAME *frame)
     }
     else //C function callback
     {
-        if (mb > -1) (*cbCANFrame[mb])(frame);
-        else (*cbGeneral)(frame);
+        CAN_FRAME forCallback(*frame);
+        if (mb > -1) (*cbCANFrame[mb])(&forCallback);
+        else (*cbGeneral)(&forCallback);
     }
 }
 

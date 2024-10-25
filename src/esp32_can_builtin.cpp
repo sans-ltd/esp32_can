@@ -173,8 +173,9 @@ void ESP32CAN::sendCallback(CAN_FRAME *frame)
     }
     else //C function callback
     {
-        if (mb > -1) (*cbCANFrame[mb])(frame);
-        else (*cbGeneral)(frame);
+        CAN_FRAME forCallback(*frame);
+        if (mb > -1) (*cbCANFrame[mb])(&forCallback);
+        else (*cbGeneral)(&forCallback);
     }
 }
 
@@ -240,7 +241,7 @@ uint32_t ESP32CAN::init(uint32_t ul_baudrate)
     {
         //Reconfigure alerts to detect Error Passive and Bus-Off error states
         uint32_t alerts_to_enable = TWAI_ALERT_ERR_PASS | TWAI_ALERT_BUS_OFF | TWAI_ALERT_AND_LOG | TWAI_ALERT_ERR_ACTIVE 
-                                  | TWAI_ALERT_ARB_LOST | TWAI_ALERT_BUS_ERROR | TWAI_ALERT_TX_FAILED | TWAI_ALERT_RX_QUEUE_FULL;
+                                  | TWAI_ALERT_ARB_LOST | TWAI_ALERT_BUS_ERROR | TWAI_ALERT_TX_FAILED | TWAI_ALERT_RX_QUEUE_FULL | TWAI_ALERT_AND_LOG;
         if (twai_reconfigure_alerts(alerts_to_enable, NULL) == ESP_OK)
         {
             printf("Alerts reconfigured\n");
