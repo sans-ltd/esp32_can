@@ -60,6 +60,7 @@ class MCP2515 : public CAN_COMMON
 	void enable();
 	void disable();
 	bool sendFrame(CAN_FRAME& txFrame);
+	bool sendFrameFromISR(CAN_FRAME& txFrame);
 	bool rx_avail();
 	uint16_t available(); //like rx_avail but returns the number of waiting frames
 	uint32_t get_rx_buff(CAN_FRAME &msg);
@@ -84,6 +85,7 @@ class MCP2515 : public CAN_COMMON
 	void setCSPin(uint8_t pin);
 	void EnqueueRX(CAN_FRAME& newFrame);
 	void EnqueueTX(CAN_FRAME& newFrame);
+	void EnqueueTXFromISR(CAN_FRAME& newFrame);
 	bool GetRXFrame(CAN_FRAME &frame);
 	void SetRXFilter(uint8_t filter, uint32_t FilterValue, bool ext);
 	void SetRXMask(uint8_t mask, uint32_t MaskValue);
