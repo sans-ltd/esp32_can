@@ -502,6 +502,12 @@ bool MCP2515::sendFrame(CAN_FRAME& txFrame)
     return true;
 }
 
+bool MCP2515::sendFrameFromISR(CAN_FRAME &txFrame)
+{
+    EnqueueTXFromISR(txFrame);
+    return true;
+}
+
 bool MCP2515::rx_avail()
 {
     return available()>0?true:false;
@@ -881,6 +887,14 @@ void MCP2515::EnqueueRX(CAN_FRAME& newFrame) {
 void MCP2515::EnqueueTX(CAN_FRAME& newFrame) {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
   xQueueSend(txQueue, &newFrame, 0);
+  xHigherPriorityTaskWoken = xTaskNotifyGive(intDelegateTask); //send notice to the handler task that it can do the SPI transaction now
+  //if (xHigherPriorityTaskWoken == pdTRUE) 
+}
+
+void MCP2515::EnqueueTXFromISR(CAN_FRAME &newFrame)
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  xQueueSendFromISR(txQueue, &newFrame, 0);
   xHigherPriorityTaskWoken = xTaskNotifyGive(intDelegateTask); //send notice to the handler task that it can do the SPI transaction now
   //if (xHigherPriorityTaskWoken == pdTRUE) 
 }
