@@ -65,7 +65,7 @@ typedef struct
 class ESP32CAN : public CAN_COMMON
 {
 public:
-  ESP32CAN(gpio_num_t rxPin, gpio_num_t txPin);
+  ESP32CAN(gpio_num_t rxPin, gpio_num_t txPin, uint8_t busNumber = 0);
   ESP32CAN();
 
   //block of functions which must be overriden from CAN_COMMON to implement functionality for this hardware
@@ -101,8 +101,22 @@ private:
   // Pin variables
   ESP32_FILTER filters[BI_NUM_FILTERS];
   int rxBufferSize;
-};
 
-extern QueueHandle_t callbackQueue;
+  twai_general_config_t twai_general_cfg = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_17, GPIO_NUM_16, TWAI_MODE_NORMAL);
+  twai_timing_config_t twai_speed_cfg = TWAI_TIMING_CONFIG_500KBITS();
+  twai_filter_config_t twai_filters_cfg = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+  #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
+  twai_handle_t bus_handle = nullptr;
+  #endif
+
+  QueueHandle_t callbackQueue = nullptr;
+  QueueHandle_t rx_queue = nullptr;
+
+  TaskHandle_t CAN_WatchDog_Builtin_handler = nullptr;
+  TaskHandle_t task_CAN_handler = nullptr;
+  TaskHandle_t task_LowLevelRX_handler = nullptr;
+
+  static void task_CAN( void *pvParameters );
+};
 
 #endif
