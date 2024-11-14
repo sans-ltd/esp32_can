@@ -98,6 +98,8 @@ protected:
   int cyclesSinceTraffic;
 
 private:
+  static const char* PROGMEM TAG;
+  
   // Pin variables
   ESP32_FILTER filters[BI_NUM_FILTERS];
   int rxBufferSize;
@@ -117,6 +119,7 @@ private:
   TaskHandle_t task_LowLevelRX_handler = nullptr;
 
   static void task_CAN( void *pvParameters );
+  static void task_LowLevelRX(void *pvParameters);
 };
 
 #endif

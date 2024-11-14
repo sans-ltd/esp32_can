@@ -10,6 +10,8 @@
 
 #include "Arduino.h"
 #include "esp32_can_builtin.h"
+
+const char* ESP32CAN::TAG PROGMEM = "ESP32CAN"; 
                                                                  //tx,         rx,           mode
 //because of the way the TWAI library works, it's just easier to store the valid timings here and anything not found here
 //is just plain not supported. If you need a different speed then add it here. Be sure to leave the zero record at the end
@@ -37,7 +39,7 @@ const VALID_TIMING valid_timings[] =
 
 ESP32CAN::ESP32CAN(gpio_num_t rxPin, gpio_num_t txPin, uint8_t busNumber) : CAN_COMMON(32)
 {
-    printf ("Create driver for bus %d\n", busNumber);
+    ESP_LOGI(TAG, "Create driver for bus %d", busNumber);
     twai_general_cfg.rx_io = rxPin;
     twai_general_cfg.tx_io = txPin;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
@@ -115,7 +117,7 @@ void CAN_WatchDog_Builtin( void *pvParameters )
 //infinitely loops accepting frames from the TWAI driver. Calls
 //our processing routine which then applies the custom 32 filters and
 //decides whether to trigger callbacks or queue the frame (or throw it away)
-void task_LowLevelRX(void *pvParameters)
+void ESP32CAN::task_LowLevelRX(void *pvParameters)
 {
     ESP32CAN* espCan = (ESP32CAN*)pvParameters;
     
@@ -132,6 +134,7 @@ void task_LowLevelRX(void *pvParameters)
 #endif
             if (result == ESP_OK)
             {
+                // ESP_LOGD(TAG, "task_LowLevelRX@%d (0x%x) got ID 0x%03x res 0x%x", espCan->twai_general_cfg.controller_id, espCan->bus_handle, message.identifier, result);
                 espCan->processFrame(message);
             }
         }
@@ -248,6 +251,9 @@ void ESP32CAN::_init()
 
 uint32_t ESP32CAN::init(uint32_t ul_baudrate)
 {
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+    ESP_LOGD(TAG, "Debug log enabled.");
+
     _init();
     set_baudrate(ul_baudrate);
     if (debuggingMode)
@@ -277,6 +283,7 @@ uint32_t ESP32CAN::init(uint32_t ul_baudrate)
 #else
     xTaskCreatePinnedToCore(&task_LowLevelRX, "CAN_LORX", 4096, this, 19, NULL, 1);
 #endif
+    ESP_LOGD(TAG, "init(): readyForTraffic = true");
     readyForTraffic = true;
     return ul_baudrate;
 }
@@ -287,6 +294,7 @@ uint32_t ESP32CAN::beginAutoSpeed()
 
     _init();
 
+    ESP_LOGD(TAG, "beginAutoSpeed(): readyForTraffic = false");
     readyForTraffic = false;
     twai_stop();
     twai_general_cfg.mode = TWAI_MODE_LISTEN_ONLY;
@@ -356,27 +364,19 @@ void ESP32CAN::enable()
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
     auto result = twai_driver_install_v2(&twai_general_cfg, &twai_speed_cfg, &twai_filters_cfg, &bus_handle);
     if (result == ESP_OK) {
-        printf("Driver %d installed\n", twai_general_cfg.controller_id);
+        ESP_LOGI(TAG, "Driver %d installed, handle 0x%x", twai_general_cfg.controller_id, bus_handle);
     } else {
-        printf("Failed to install driver %d: error: %d \n", twai_general_cfg.controller_id, result);
-        return;
-    }
-    //Start TWAI driver
-    result = twai_start_v2(bus_handle);
-    if (result == ESP_OK) {
-        // printf("Driver started\n");
-    } else {
-        printf("Failed to start driver %d: error: %d \n", twai_general_cfg.controller_id, result);
+        ESP_LOGE(TAG, "Failed to install driver %d: error: 0x%x", twai_general_cfg.controller_id, result);
         return;
     }
 #else
     if (twai_driver_install(&twai_general_cfg, &twai_speed_cfg, &twai_filters_cfg) == ESP_OK)
     {
-        //printf("TWAI Driver installed\n");
+        ESP_LOGI(TAG, "TWAI Driver installed");
     }
     else
     {
-        printf("Failed to install TWAI driver\n");
+        ESP_LOGE(TAG, "Failed to install TWAI driver");
         return;
     }
 #endif
@@ -391,18 +391,30 @@ void ESP32CAN::enable()
 #else
     xTaskCreatePinnedToCore(&task_LowLevelRX, "CAN_LORX", 4096, this, 19, &task_LowLevelRX_handler, 1);
 #endif
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
+    //Start TWAI driver
+    result = twai_start_v2(bus_handle);
+    if (result == ESP_OK) {
+        ESP_LOGI(TAG, "TWAI Driver %d started", twai_general_cfg.controller_id);
+    } else {
+        ESP_LOGE(TAG, "Failed to start TWAI driver %d: error: 0x%", twai_general_cfg.controller_id, result);
+        return;
+    }
+#else
     // Start TWAI driver
     if (twai_start() == ESP_OK)
     {
-        //printf("TWAI Driver started\n");
+        ESP_LOGI(TAG, "TWAI Driver started");
     }
     else
     {
-        printf("Failed to start TWAI driver\n");
+        ESP_LOGE(TAG, "Failed to start TWAI driver");
         return;
     }
+#endif
 
-
+    ESP_LOGD(TAG, "enable(): readyForTraffic = true");
     readyForTraffic = true;
 }
 
@@ -427,11 +439,15 @@ void ESP32CAN::disable()
                 vQueueDelete(queue);
             }
         }
-
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
+        twai_driver_uninstall_v2(bus_handle);
+#else
         twai_driver_uninstall();
+#endif
     } else {
         return;
     }
+    ESP_LOGD(TAG, "dsiable(): readyForTraffic = false");
     readyForTraffic = false;
 }
 
