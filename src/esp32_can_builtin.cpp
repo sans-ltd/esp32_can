@@ -220,6 +220,7 @@ int ESP32CAN::_setFilter(uint32_t id, uint32_t mask, bool extended)
     {
         if (!filters[i].configured) 
         {
+            ESP_LOGI(TAG, "Driver %d ID 0x%x -> mailbox %d", twai_general_cfg.controller_id, id, i);
             _setFilterSpecific(i, id, mask, extended);
             return i;
         }
@@ -521,6 +522,7 @@ bool ESP32CAN::sendFrame(CAN_FRAME& txFrame)
 
     __TX_frame.identifier = txFrame.id;
     __TX_frame.data_length_code = txFrame.length;
+    __TX_frame.flags = 0;
     __TX_frame.rtr = txFrame.rtr;
     __TX_frame.extd = txFrame.extended;
     for (int i = 0; i < 8; i++) __TX_frame.data[i] = txFrame.data.byte[i];
