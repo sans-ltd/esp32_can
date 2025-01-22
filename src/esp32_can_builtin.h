@@ -98,7 +98,7 @@ protected:
   int cyclesSinceTraffic;
 
 private:
-  static const char* PROGMEM TAG;
+  char TAG[10] = {0};
   
   // Pin variables
   ESP32_FILTER filters[BI_NUM_FILTERS];

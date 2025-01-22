@@ -10,9 +10,7 @@
 
 #include "Arduino.h"
 #include "esp32_can_builtin.h"
-
-const char* ESP32CAN::TAG PROGMEM = "ESP32CAN"; 
-                                                                 //tx,         rx,           mode
+                                                         //tx,         rx,           mode
 //because of the way the TWAI library works, it's just easier to store the valid timings here and anything not found here
 //is just plain not supported. If you need a different speed then add it here. Be sure to leave the zero record at the end
 //as it serves as a terminator
@@ -39,7 +37,9 @@ const VALID_TIMING valid_timings[] =
 
 ESP32CAN::ESP32CAN(gpio_num_t rxPin, gpio_num_t txPin, uint8_t busNumber) : CAN_COMMON(32)
 {
+    snprintf(TAG, sizeof(TAG), "ESP32CAN%d", busNumber);
     ESP_LOGI(TAG, "Create driver for bus %d", busNumber);
+
     twai_general_cfg.rx_io = rxPin;
     twai_general_cfg.tx_io = txPin;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
@@ -284,7 +284,7 @@ uint32_t ESP32CAN::init(uint32_t ul_baudrate)
 #else
     xTaskCreatePinnedToCore(&task_LowLevelRX, "CAN_LORX", 4096, this, 19, NULL, 1);
 #endif
-    ESP_LOGD(TAG, "init(): readyForTraffic = true");
+    ESP_LOGD(TAG, "Driver %d, init(): readyForTraffic = true", twai_general_cfg.controller_id);
     readyForTraffic = true;
     return ul_baudrate;
 }
@@ -415,14 +415,19 @@ void ESP32CAN::enable()
     }
 #endif
 
-    ESP_LOGD(TAG, "enable(): readyForTraffic = true");
+    ESP_LOGD(TAG, "Driver %d: enable(): readyForTraffic = true", twai_general_cfg.controller_id);
     readyForTraffic = true;
 }
 
 void ESP32CAN::disable()
 {
     twai_status_info_t info;
-    if (twai_get_status_info(&info) == ESP_OK) {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
+    auto result = twai_get_status_info_v2(bus_handle, &info);
+#else
+    auto result = twai_get_status_info_v2(&info);
+#endif
+    if (result == ESP_OK) {
         if (info.state == TWAI_STATE_RUNNING) {
             twai_stop();
         }
@@ -446,9 +451,10 @@ void ESP32CAN::disable()
         twai_driver_uninstall();
 #endif
     } else {
+        ESP_LOGW(TAG, "disable(): twai_get_status_info returned %d", result);
         return;
     }
-    ESP_LOGD(TAG, "dsiable(): readyForTraffic = false");
+    ESP_LOGD(TAG, "Driver %d, disable(): readyForTraffic = false", twai_general_cfg.controller_id);
     readyForTraffic = false;
 }
 
