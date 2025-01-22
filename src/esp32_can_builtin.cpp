@@ -220,7 +220,7 @@ int ESP32CAN::_setFilter(uint32_t id, uint32_t mask, bool extended)
     {
         if (!filters[i].configured) 
         {
-            ESP_LOGI(TAG, "Driver %d ID 0x%x -> mailbox %d", twai_general_cfg.controller_id, id, i);
+            ESP_LOGI(TAG, "ID 0x%x -> mailbox %d", id, i);
             _setFilterSpecific(i, id, mask, extended);
             return i;
         }
@@ -284,7 +284,7 @@ uint32_t ESP32CAN::init(uint32_t ul_baudrate)
 #else
     xTaskCreatePinnedToCore(&task_LowLevelRX, "CAN_LORX", 4096, this, 19, NULL, 1);
 #endif
-    ESP_LOGD(TAG, "Driver %d, init(): readyForTraffic = true", twai_general_cfg.controller_id);
+    ESP_LOGD(TAG, "init(): readyForTraffic = true");
     readyForTraffic = true;
     return ul_baudrate;
 }
@@ -415,7 +415,7 @@ void ESP32CAN::enable()
     }
 #endif
 
-    ESP_LOGD(TAG, "Driver %d: enable(): readyForTraffic = true", twai_general_cfg.controller_id);
+    ESP_LOGD(TAG, "enable(): readyForTraffic = true");
     readyForTraffic = true;
 }
 
@@ -451,10 +451,10 @@ void ESP32CAN::disable()
         twai_driver_uninstall();
 #endif
     } else {
-        ESP_LOGW(TAG, "disable(): twai_get_status_info returned %d", result);
+        ESP_LOGD(TAG, "disable(): twai_get_status_info returned %d", result);
         return;
     }
-    ESP_LOGD(TAG, "Driver %d, disable(): readyForTraffic = false", twai_general_cfg.controller_id);
+    ESP_LOGD(TAG, "disable(): readyForTraffic = false");
     readyForTraffic = false;
 }
 
