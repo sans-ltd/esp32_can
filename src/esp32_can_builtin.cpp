@@ -161,7 +161,7 @@ void ESP32CAN::task_CAN( void *pvParameters )
     while (1)
     {
         //receive next CAN frame from queue and fire off the callback
-        if(espCan->readyForTraffic && xQueueReceive(espCan->callbackQueue, &rxFrame, portMAX_DELAY)==pdTRUE)
+        if(xQueueReceive(espCan->callbackQueue, &rxFrame, portMAX_DELAY)==pdTRUE)
         {
             espCan->sendCallback(&rxFrame);
         }
