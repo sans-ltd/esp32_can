@@ -113,7 +113,8 @@ private:
 
   QueueHandle_t callbackQueue = nullptr;
   QueueHandle_t rx_queue = nullptr;
-
+  bool queuesReady = false;
+  
   TaskHandle_t CAN_WatchDog_Builtin_handler = nullptr;
   TaskHandle_t task_CAN_handler = nullptr;
   TaskHandle_t task_LowLevelRX_handler = nullptr;

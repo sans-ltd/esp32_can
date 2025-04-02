@@ -124,7 +124,7 @@ void ESP32CAN::task_LowLevelRX(void *pvParameters)
     while (1)
     {
         twai_message_t message;
-        if (espCan->readyForTraffic)
+        if (espCan->queuesReady && espCan->readyForTraffic)
         {
             esp_err_t result;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
@@ -161,7 +161,7 @@ void ESP32CAN::task_CAN( void *pvParameters )
     while (1)
     {
         //receive next CAN frame from queue and fire off the callback
-        if(xQueueReceive(espCan->callbackQueue, &rxFrame, portMAX_DELAY)==pdTRUE)
+        if(espCan->queuesReady && xQueueReceive(espCan->callbackQueue, &rxFrame, portMAX_DELAY)==pdTRUE)
         {
             espCan->sendCallback(&rxFrame);
         }
@@ -384,6 +384,7 @@ void ESP32CAN::enable()
 
     callbackQueue = xQueueCreate(16, sizeof(CAN_FRAME));
     rx_queue = xQueueCreate(rxBufferSize, sizeof(CAN_FRAME));
+    queuesReady = true; 
 
     xTaskCreate(&ESP32CAN::task_CAN, "CAN_RX", 8192, this, 15, &task_CAN_handler);
     //this next task implements our better filtering on top of the TWAI library. Accept all frames then filter in here VVVVV
@@ -435,6 +436,7 @@ void ESP32CAN::disable()
             twai_stop();
         }
 
+        queuesReady = false;
         for (auto task : {task_CAN_handler, task_LowLevelRX_handler}) {
             if (task != NULL)
             {
