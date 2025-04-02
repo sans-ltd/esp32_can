@@ -161,7 +161,7 @@ void ESP32CAN::task_CAN( void *pvParameters )
     while (1)
     {
         //receive next CAN frame from queue and fire off the callback
-        if(xQueueReceive(espCan->callbackQueue, &rxFrame, portMAX_DELAY)==pdTRUE)
+        if(espCan->readyForTraffic && xQueueReceive(espCan->callbackQueue, &rxFrame, portMAX_DELAY)==pdTRUE)
         {
             espCan->sendCallback(&rxFrame);
         }
@@ -421,6 +421,9 @@ void ESP32CAN::enable()
 
 void ESP32CAN::disable()
 {
+    ESP_LOGD(TAG, "disable(): readyForTraffic = false");
+    readyForTraffic = false;
+
     twai_status_info_t info;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
     auto result = twai_get_status_info_v2(bus_handle, &info);
@@ -443,6 +446,7 @@ void ESP32CAN::disable()
         for (auto queue : {rx_queue, callbackQueue}) {
             if (queue) {
                 vQueueDelete(queue);
+                queue = NULL;
             }
         }
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
@@ -454,8 +458,6 @@ void ESP32CAN::disable()
         ESP_LOGD(TAG, "disable(): twai_get_status_info returned %d", result);
         return;
     }
-    ESP_LOGD(TAG, "disable(): readyForTraffic = false");
-    readyForTraffic = false;
 }
 
 //This function is too big to be running in interrupt context. Refactored so it doesn't.
