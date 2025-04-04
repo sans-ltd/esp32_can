@@ -582,6 +582,7 @@ bool ESP32CAN::sendFrame(CAN_FRAME& txFrame)
     __TX_frame.extd = txFrame.extended;
     __TX_frame.self = 0;
     __TX_frame.ss = 0;
+    __TX_frame.dlc_non_comp = 0;
     for (int i = 0; i < 8; i++) __TX_frame.data[i] = txFrame.data.byte[i];
 
     //don't wait long if the queue was full. The end user code shouldn't be sending faster
