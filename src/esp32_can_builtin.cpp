@@ -608,15 +608,12 @@ uint32_t ESP32CAN::get_rx_buff(CAN_FRAME &msg)
 {
     CAN_FRAME frame;
     //receive next CAN frame from queue
-    if (uxQueueMessagesWaiting(rx_queue)) {
-        if(xQueueReceive(rx_queue, &frame, 0) == pdTRUE)
-        {
-            msg = frame; //do a copy in the case that the receive worked
-            return true;
-        }
-        else
-            return false;
+    if(xQueueReceive(rx_queue, &frame, 0) == pdTRUE)
+    {
+        msg = frame; //do a copy in the case that the receive worked
+        return true;
     }
-    return false; //otherwise we leave the msg variable alone and just return false
+    else
+        return false;
 }
 
