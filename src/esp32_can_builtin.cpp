@@ -255,6 +255,10 @@ void ESP32CAN::_init()
         filters[i].configured = false;
     }
 
+    ESP_LOGI(TAG, "Creating queues");
+    callbackQueue = xQueueCreate(16, sizeof(CAN_FRAME));
+    rx_queue = xQueueCreate(rxBufferSize, sizeof(CAN_FRAME));
+
     if (!CAN_WatchDog_Builtin_handler) {
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
         std::ostringstream canWatchDogTaskNameStream;
@@ -421,11 +425,6 @@ void ESP32CAN::enable()
     }
 #endif
 
-    ESP_LOGI(TAG, "Creating queues");
-
-    callbackQueue = xQueueCreate(16, sizeof(CAN_FRAME));
-    rx_queue = xQueueCreate(rxBufferSize, sizeof(CAN_FRAME));
-
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
     std::ostringstream canHandlerTaskNameStream;
     std::ostringstream canLowLevelTaskNameStream;
@@ -497,12 +496,6 @@ void ESP32CAN::disable()
             {
                 vTaskDelete(task);
                 task = NULL;
-            }
-        }
-
-        for (auto queue : {rx_queue, callbackQueue}) {
-            if (queue) {
-                vQueueDelete(queue);
             }
         }
 
