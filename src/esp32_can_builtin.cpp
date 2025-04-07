@@ -110,7 +110,7 @@ void ESP32CAN::CAN_WatchDog_Builtin( void *pvParameters )
 #endif
                 if (result != ESP_OK)
                 {
-                    printf("Could not initiate bus recovery!\n");
+                    ESP_LOGE(espCan->TAG, "Could not initiate bus recovery, result = %d!", result);
                 }
             }
         }
@@ -294,11 +294,11 @@ uint32_t ESP32CAN::init(uint32_t ul_baudrate)
 #endif
         if (result == ESP_OK)
         {
-            printf("Alerts reconfigured\n");
+            ESP_LOGI(TAG, "Alerts reconfigured");
         }
         else
         {
-            printf("Failed to reconfigure alerts");
+            ESP_LOGE(TAG, "Failed to reconfigure alerts result = %d", result);
         }
     }
     //this task implements our better filtering on top of the TWAI library. Accept all frames then filter in here VVVVV
@@ -381,7 +381,7 @@ uint32_t ESP32CAN::set_baudrate(uint32_t ul_baudrate)
         }
         idx++;
     }
-    printf("Could not find a valid bit timing! You will need to add your desired speed to the library!\n");
+    ESP_LOGW(TAG, "Could not find a valid bit timing! You will need to add your desired speed to the library!");
     return 0;
 }
 
@@ -421,7 +421,7 @@ void ESP32CAN::enable()
     }
 #endif
 
-    printf("Creating queues\n");
+    ESP_LOGI(TAG, "Creating queues");
 
     callbackQueue = xQueueCreate(16, sizeof(CAN_FRAME));
     rx_queue = xQueueCreate(rxBufferSize, sizeof(CAN_FRAME));
@@ -438,11 +438,11 @@ void ESP32CAN::enable()
     const char* canLowLevelTaskName = "CAN_LORX_CAN";
 #endif
 
-    printf("Starting can handler task\n");
+    ESP_LOGI(TAG, "Starting can handler task %s", canHandlerTaskName);
     xTaskCreate(ESP32CAN::task_CAN, canHandlerTaskName, 8192, this, 15, &task_CAN_handler);
 
 #if defined(CONFIG_FREERTOS_UNICORE)
-    printf("Starting low level RX task\n");
+    ESP_LOGI(TAG, "Starting low level RX task %s", canLowLevelTaskName);
     xTaskCreate(ESP32CAN::task_LowLevelRX, canLowLevelTaskName, 4096, this, 19, &task_LowLevelRX_handler);
 #else
     //this next task implements our better filtering on top of the TWAI library. Accept all frames then filter in here VVVVV
