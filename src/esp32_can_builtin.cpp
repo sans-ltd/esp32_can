@@ -305,20 +305,7 @@ uint32_t ESP32CAN::init(uint32_t ul_baudrate)
             ESP_LOGE(TAG, "Failed to reconfigure alerts result = %d", result);
         }
     }
-    //this task implements our better filtering on top of the TWAI library. Accept all frames then filter in here VVVVV
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)
-    std::ostringstream canLowLevelTaskNameStream;
-    canLowLevelTaskNameStream << "CAN_LORX_CAN" << twai_general_cfg.controller_id;
-    const char* canLowLevelTaskName = canLowLevelTaskNameStream.str().c_str();
-#else
-    const char* canLowLevelTaskName = "CAN_LORX_CAN0";
-#endif
 
-#if defined(CONFIG_FREERTOS_UNICORE)
-    xTaskCreate(ESP32CAN::task_LowLevelRX, canLowLevelTaskName, 4096, this, 19, NULL);
-#else
-    xTaskCreatePinnedToCore(ESP32CAN::task_LowLevelRX, canLowLevelTaskName, 4096, this, 19, NULL, 1);
-#endif
     ESP_LOGD(TAG, "init(): readyForTraffic = true");
     readyForTraffic = true;
     return ul_baudrate;
